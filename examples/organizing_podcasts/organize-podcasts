@@ -1,0 +1,7 @@
+#!/bin/zsh
+
+# script to organize podcasts into subdirectories by podcast
+# 
+PODCAST_DIR=~/audio/podcasts
+
+scala -cp $HOME/bin/DirectoryOrganizer.jar DirectoryOrganizer $HOME/podcast-organizer.cfg $PODCAST_DIR $PODCAST_DIR
