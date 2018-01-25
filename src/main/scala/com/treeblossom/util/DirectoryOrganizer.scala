@@ -14,8 +14,8 @@ import java.io.File
 object DirectoryOrganizer {
 
   /*
-   * 
-   * 
+   * iterate sequentially through List of MoveRules, 
+   * applying them in order
    */
   def main(args: Array[String]): Unit = {
     if (args.length !=3) {
@@ -25,17 +25,12 @@ object DirectoryOrganizer {
     var configFile = args(0)
     var srcdir = args(1)
     var basedir = args(2)
-    //println("source directory: " + srcdir)
-    //println("base directory: " + basedir)
     var m = loadConfig(configFile)
     //dumpConfig(m)
-    m.keys.foreach{key =>
-      m.get(key).head.foreach{regex =>
-        findMatchingFiles(srcdir,regex).foreach{
+    m.foreach{rule =>
+        findMatchingFiles(srcdir,rule.regex).foreach{
           file =>
-          //println("mv " + srcdir + "/" + file.getName() + " " + basedir + "/" + key+"/"  )
-          moveFile(srcdir + "/" + file.getName(),  basedir + "/" + key,  file.getName() )
-        }
+          moveFile(srcdir + "/" + file.getName(),  basedir + "/" + rule.dirName,  file.getName() )
       }
     }
     removeEmptyDirs(basedir)
@@ -75,7 +70,7 @@ object DirectoryOrganizer {
 
 /*
  * 
- * creates a Map[String, List[Regex]]
+ * create a List of MoveRules
  *  from a text file formatted thusly:
  * 
  *     1player_podcast ^1P.*.mp3$
@@ -86,39 +81,30 @@ object DirectoryOrganizer {
  * 
  * 
  */
-  def loadConfig(cfgFilePath: String): collection.mutable.Map[String, List[Regex]] = {
-    var m = collection.mutable.Map[String, List[Regex]]()
+  def loadConfig(cfgFilePath: String): List[MoveRule] = {
+    var lst = List[MoveRule]()
     scala.tools.nsc.io.File(cfgFilePath).lines().foreach{
-      line => m.put(line.split(" ")(0), List[Regex]())
+      line => lst = lst :+ (new MoveRule(line.split(" ")(0),new Regex(line.split(" ")(1))))
     }
-
-    scala.tools.nsc.io.File(cfgFilePath).lines().foreach{
-      line => m.put(line.split(" ")(0),
-        m.get(line.split(" ")(0)).head :+ new Regex(line.split(" ")(1))
-      )
-    }
-    return m
+    return lst
   }
 
-  def dumpConfig(cfgMap: collection.mutable.Map[String, List[Regex]]) :Unit = {
-    cfgMap.keys.foreach{key => println(cfgMap.get(key).head) }
-  }
 
 /*
  * finds files in dir whose names match regexp. 
  * 
  */
-  def findMatchingFilesOrig(dir: String, regexp: Regex): Array[java.io.File]  ={
-    return new java.io.File(dir).listFiles
-      .filter(file => regexp.findFirstIn(file.getName).isDefined)
-  }
-
   def findMatchingFiles(dir: String, regexp: Regex): Array[java.io.File]  ={
     if(new java.io.File(dir).listFiles!=null)
       return new java.io.File(dir).listFiles
         .filter(file => regexp.findFirstIn(file.getName).isDefined)
     else
       return new Array[java.io.File](0)
+  }
+
+
+  def dumpConfig(cfgList: List[MoveRule]) :Unit = {
+    cfgList.foreach{rule => println(rule.regex + " " + rule.dirName) }
   }
 
 
